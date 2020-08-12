@@ -6,6 +6,11 @@ ui <- fluidPage(
   
   # Application title
   titlePanel("Optimal seasonal strategies"),
+  p("Implementation of the model in Thygesen et al: ",
+    a(href="https://www.biorxiv.org/content/10.1101/2020.08.02.213595v1",
+      'Optimal seasonal routines across animals and latitudes.')),
+  p("Code on ",
+    a(href="https://github.com/Kenhasteandersen/Seasons","github.")),
   
   sidebarLayout(
     sidebarPanel(
