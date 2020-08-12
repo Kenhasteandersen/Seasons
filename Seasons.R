@@ -228,24 +228,27 @@ plotOptimal = function(opt) {
   
   
   defaultpanel(xlim=c(0,1), ylim=c(0,1),
-              xlab="Time", ylab="Fraction")
+               xlab="Time", ylab="Fraction")
   
   hibernation = (opt$tau==0) & (opt$V>0)
   ribbon(t, ymax=hibernation[ix], ymin=0*t,col=stdgrey)
-  
-  
-  lines(t, opt$tau[ix], col="red", type="l", lwd=2)
-      
-  lines(t, opt$sigma[ix], col="blue", lwd=2)
-  ribbon(t, ymax=opt$S[ix], ymin=0*t,col="blue")
 
+  act = opt$tau[ix]
+  lines(t, act, col="red", type="l", lwd=2)
+  
+  sigma = smoothing(opt$sigma[ix])
+  sigma[act==0] = NA
+  lines(t, sigma, col="blue", lwd=2)
+  ribbon(t, ymax=opt$S[ix], ymin=0*t,col="blue")
+  
   dying = opt$V[ix]<=0
   ribbon(t, ymax=dying, ymin=0*t,col=darkgrey)
   #lines(t, opt$S[ix], col="magenta", lwd=3)
   #lines(t, opt$E[ix], col="brown", lwd=3)
   
   legend("bottom", 
-         legend=c("Fitness<0","Hibermation","Storage","Activity","Accumulate"),
+         legend=c("Fitness<0","Hibernation","Storage",
+                  "Activity","Accumulate storage"),
          col=c(NA, NA, NA,"red", "blue"),
          lty=c(0,0,0,1,1),
          lwd=2,
@@ -253,5 +256,42 @@ plotOptimal = function(opt) {
          fill=c(darkgrey, stdgrey, "blue", "transparent", "transparent"),
          border=c("transparent")
          
-         )
+  )
+}
+
+smoothing = function(y) {
+  lgt = 60; # Width of window used to search of flutuating solution in sigma
+  windowSize = 40; # Width of window used for smoothing
+  
+  sigmaForward = 0*y;
+  sigmaBackward = 0*y;
+  for (i in 1:length(y)) {
+    sigmaBackward[i] = mean(y[max(1,i-lgt):i]);
+    sigmaForward[i] = mean(y[i:min(length(y),i+lgt)]);
+  }
+  ixSmooth = ((sigmaForward != 0) & (sigmaBackward != 0)) + 
+    ((sigmaForward != 1) & (sigmaBackward !=1))
+  
+  ii = 1
+  while( first(ixSmooth[ii:length(ixSmooth)],2)>=ii) {
+    iStart = first(ixSmooth[ii:length(ixSmooth)],2)
+    iEnd = first(ixSmooth[iStart:length(ixSmooth)],1)+iStart
+    
+    window = min(windowSize, iEnd-iStart)
+    y[iStart:iEnd] = filter(y[iStart:iEnd], rep(1 / window, window), 
+                            sides = 2, circular=TRUE)
+    
+    #   filter((1/windowSize)*ones(1,windowSize), 1, y[iStart:iEnd]);
+    ii = iEnd;
+  }
+  return(y)
+  
+}
+
+first = function(x,y) {
+  z = which(x==y)
+  z = z[1]
+  if (is.na(z))
+    z = FALSE
+  return(z)
 }
